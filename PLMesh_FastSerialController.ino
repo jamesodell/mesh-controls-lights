@@ -17,15 +17,16 @@
 #define FASTLED_INTERRUPT_RETRY_COUNT 1
 #include "painlessMesh.h"
 
-#define   MESH_PREFIX     "i3Mesh"
-#define   MESH_PASSWORD   "password"
+#define   MESH_PREFIX     "LightMesh"
+#define   MESH_PASSWORD   "password1"
 #define   MESH_PORT       5555
 
 Scheduler userScheduler; // to control your personal task
 painlessMesh  mesh;
 
 // Serial data
-int incomingByte = 0;
+unsigned int incomingByte = 0;
+unsigned int led_frame_rate = 30;
 
 // User stub
 void sendMessage() ; // Prototype so PlatformIO doesn't complain

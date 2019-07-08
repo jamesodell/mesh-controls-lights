@@ -23,14 +23,13 @@
 #include <FastLED.h>
 
 // PainLessMesh defines
-#define   MESH_PREFIX     "i3Mesh"
+#define   MESH_PREFIX     "LightMesh1"
 #define   MESH_PASSWORD   "password"
 #define   MESH_PORT       5555
 
 // FastLED defines
 #define   NUM_LEDS        8
 #define   DATA_PIN        2
-#define   FRAME_RATE      30
 
 Scheduler userScheduler; // to control your personal task
 painlessMesh  mesh;
@@ -40,6 +39,7 @@ CRGB leds[NUM_LEDS];
 
 unsigned int led_state = 0;
 unsigned int led_counter = 0;
+unsigned int led_frame_rate = 30;
 
 // User task function prototypes
 void sendMessage() ; // Prototype so PlatformIO doesn't complain
@@ -47,7 +47,7 @@ void LEDController(); // LED Controlelr prototype
 
 // Define user tasks
 Task taskSendMessage( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
-Task taskLEDController((int)(1000 / FRAME_RATE), TASK_FOREVER, &LEDController);
+Task taskLEDController((int)(1000 / led_frame_rate), TASK_FOREVER, &LEDController);
 
 // User Task - Send message 'msg'
 
@@ -105,8 +105,8 @@ void LEDController()
 
 
       // Set Task interval
-      // TODO Will this work if FRAME_RATE changed dynamically?
-      taskLEDController.setInterval((int)(1000 / FRAME_RATE));
+      // TODO Will this work if led_frame_rate changed dynamically?
+      taskLEDController.setInterval((int)(1000 / led_frame_rate));
 
       //
       //  // Change LED pattern based on received message
