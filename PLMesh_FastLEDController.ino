@@ -36,7 +36,9 @@ painlessMesh  mesh;
 
 // LED data array
 CRGB leds[NUM_LEDS];
+unsigned int led_brightness = 150;
 
+// Current LED pattern
 char led_state = '0';
 unsigned int led_counter = 0;
 unsigned int led_frame_rate = 30;
@@ -46,7 +48,7 @@ void sendMessage() ; // Prototype so PlatformIO doesn't complain
 void LEDController(); // LED Controlelr prototype
 
 // Define user tasks
-Task taskSendMessage( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
+Task taskSendMessage( TASK_SECOND * 3 , TASK_FOREVER, &sendMessage );
 Task taskLEDController((int)(1000 / led_frame_rate), TASK_FOREVER, &LEDController);
 
 // User Task - Send message 'msg'
@@ -54,18 +56,17 @@ Task taskLEDController((int)(1000 / led_frame_rate), TASK_FOREVER, &LEDControlle
 //*******************************************************
 //************ Send Message *****************************
 //*******************************************************
-
 void sendMessage()
 {
-  String msg = "Hello from node ";
-  msg += mesh.getNodeId();
-  mesh.sendBroadcast( msg );    // Node NOT receives own broadcast message
-  //  mesh.sendBroadcast( msg, true );  // Node receives own broadcast message
-
-  // bool painlessMesh::sendSingle(uint32_t dest, String &msg)
-  // String painlessMesh::subConnectionJson() // Returns mesh topology in JSON
-
-  taskSendMessage.setInterval(TASK_SECOND * 1);
+  //  String msg = "Hello from Light node -> ";
+  //  msg += mesh.getNodeId();
+  //  mesh.sendBroadcast( msg );    // Node NOT receives own broadcast message
+  //  //  mesh.sendBroadcast( msg, true );  // Node receives own broadcast message
+  //
+  //  // bool painlessMesh::sendSingle(uint32_t dest, String &msg)
+  //  // String painlessMesh::subConnectionJson() // Returns mesh topology in JSON
+  //
+  //  taskSendMessage.setInterval(TASK_SECOND * 3);
 }
 
 // Run different LED pattern based on 'led_state'
@@ -78,60 +79,157 @@ void LEDController()
 {
 
   // Change LED pattern based on received message
+  Serial.print("LED State -> ");
+  Serial.println(led_state);
   switch (led_state)
   {
     case '1':   // RED
       {
-        // Start all leds WHITE
+        // Start all leds RED
         for (int i = 0; i < NUM_LEDS; i++)
         {
           leds[i] = CRGB::Red;
         }
         FastLED.show();
-
         break;
       }
     case '2':   // GREEN
       {
-        // Start all leds WHITE
+        // Start all leds GREEN
         for (int i = 0; i < NUM_LEDS; i++)
         {
           leds[i] = CRGB::Green;
         }
         FastLED.show();
-
         break;
       }
     case '3':   // BLUE
       {
-        // Start all leds WHITE
+        // Start all leds BLUE
         for (int i = 0; i < NUM_LEDS; i++)
         {
           leds[i] = CRGB::Blue;
         }
         FastLED.show();
-
         break;
       }
-//    default:
-//      {
-//        // Start all leds WHITE
-//        for (int i = 0; i < NUM_LEDS; i++)
-//        {
-//          leds[i] = CRGB::White;
-//        }
-//        FastLED.show();
-//
-//        break;
-//      }
+    case '4':   // One pixel moving
+      {
+        // Start all leds RED
+        for (int i = 0; i < NUM_LEDS; i++)
+        {
+          leds[i] = CRGB::Red;
+        }
+
+        leds[led_counter] = CRGB::Green;
+        led_counter++;
+        Serial.print("LED Counter -> ");
+        Serial.println(led_counter);
+        if (led_counter >= NUM_LEDS)
+        {
+          led_counter = 0;
+        }
+      }
+      FastLED.show();
+      break;
+    default:
+      {
+        // Maybe default should be a timeout check
+        // Change to default pattern if no new commands recevied in x seconds
+        // to ensure the lights are always doing something, even disconnected
+
+
+        //        // Start all leds WHITE
+        //        for (int i = 0; i < NUM_LEDS; i++)
+        //        {
+        //          leds[i] = CRGB::White;
+        //        }
+        //        FastLED.show();
+        //
+        //        break;
+      }
 
 
       // Set Task interval
       // TODO Will this work if led_frame_rate changed dynamically?
       taskLEDController.setInterval((int)(1000 / led_frame_rate));
-
   }
+}
 
+
+// Painless Mesh Callbacks
+
+//*******************************************************
+//***************** Receive Message ********************
+//*******************************************************
+
+void receivedCallback( uint32_t from, String & msg )
+{
+  Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
+
+  // TODO May want to stay with string instead of int
+  led_state = atoi(msg.c_str());
+  // TEST
+  Serial.print("led_state -> ");
+  Serial.println(led_state);
+}
+
+void newConnectionCallback(uint32_t nodeId)
+{
+  Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
+}
+
+void changedConnectionCallback()
+{
+  Serial.printf("Changed connections\n");
+}
+
+void nodeTimeAdjustedCallback(int32_t offset)
+{
+  Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(), offset);
+}
+
+//*******************************************************
+//******************* Setup *****************************
+//*******************************************************
+
+void setup()
+{
+  Serial.begin(115200);
+
+  // FastLED setup - Blank all LEDs
+  FastLED.addLeds<WS2812B, DATA_PIN, RGB>(leds, NUM_LEDS);
+  FastLED.setBrightness(led_brightness);
+  FastLED.clear(true);
+
+
+  //mesh.setDebugMsgTypes( ERROR | MESH_STATUS | CONNECTION | SYNC | COMMUNICATION | GENERAL | MSG_TYPES | REMOTE ); // all types on
+  mesh.setDebugMsgTypes( ERROR | STARTUP | CONNECTION);  // set before init() so that you can see startup messages
+
+  mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT );
+  mesh.onReceive(&receivedCallback);
+  mesh.onNewConnection(&newConnectionCallback);
+  mesh.onChangedConnections(&changedConnectionCallback);
+  mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
+
+  // Add Send Message User Task
+  userScheduler.addTask( taskSendMessage );
+  taskSendMessage.enable();
+
+  // Add FastLED User Task
+  userScheduler.addTask( taskLEDController );
+  taskLEDController.enable();
+
+}
+
+//*******************************************************
+//**************** Loop *********************************
+//*******************************************************
+
+void loop()
+{
+  userScheduler.execute(); // it will run mesh scheduler as well
+  mesh.update();
 }
 
 
@@ -227,91 +325,6 @@ void LEDController()
 //      }
 
 
-
-
-
-
-// Painless Mesh Callbacks
-
-//*******************************************************
-//***************** Receive Message ********************
-//*******************************************************
-
-void receivedCallback( uint32_t from, String & msg )
-{
-  Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
-
-  // TODO May want to stay with string instead of int
-    led_state = atoi(msg.c_str());
-  // TEST
-  Serial.print("led_state -> ");
-  Serial.println(led_state);
-}
-
-void newConnectionCallback(uint32_t nodeId)
-{
-  Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
-}
-
-void changedConnectionCallback()
-{
-  Serial.printf("Changed connections\n");
-}
-
-void nodeTimeAdjustedCallback(int32_t offset)
-{
-  Serial.printf("Adjusted time %u. Offset = %d\n", mesh.getNodeTime(), offset);
-}
-
-//*******************************************************
-//******************* Setup *****************************
-//*******************************************************
-
-void setup()
-{
-  Serial.begin(115200);
-
-  // FastLED setup
-  FastLED.addLeds<WS2812B, DATA_PIN, RGB>(leds, NUM_LEDS);
-  FastLED.clear(true);
-
-
-  //mesh.setDebugMsgTypes( ERROR | MESH_STATUS | CONNECTION | SYNC | COMMUNICATION | GENERAL | MSG_TYPES | REMOTE ); // all types on
-  mesh.setDebugMsgTypes( ERROR | STARTUP );  // set before init() so that you can see startup messages
-
-  mesh.init( MESH_PREFIX, MESH_PASSWORD, &userScheduler, MESH_PORT );
-  mesh.onReceive(&receivedCallback);
-  mesh.onNewConnection(&newConnectionCallback);
-  mesh.onChangedConnections(&changedConnectionCallback);
-  mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
-
-  userScheduler.addTask( taskSendMessage );
-  taskSendMessage.enable();
-
-  // Add FastLED task
-  userScheduler.addTask( taskLEDController );
-  taskLEDController.enable();
-
-
-}
-
-
-
-
-
-
-
-
-
-//*******************************************************
-//**************** Loop *********************************
-//*******************************************************
-
-void loop()
-{
-  userScheduler.execute(); // it will run mesh scheduler as well
-  mesh.update();
-}
 
 //*******************************************************
 //*******************************************************

@@ -24,14 +24,80 @@
 Scheduler userScheduler; // to control your personal task
 painlessMesh  mesh;
 
+// Task timings
+unsigned int updateNodeListTiming = 3;
+unsigned int sendMessageTiming = 3;
+
 // Serial data
 unsigned int incomingByte = 0;
 unsigned int led_frame_rate = 30;
 
+// Other data
+unsigned int maxNumberNodes = 40;
+unsigned int nodeArray[40];
+int counter = 0;
+
+
 // User stub
 void sendMessage() ; // Prototype so PlatformIO doesn't complain
+void updateNodeList() ;
 
-Task taskSendMessage( TASK_SECOND * 1 , TASK_FOREVER, &sendMessage );
+// User tasks
+Task taskSendMessage( TASK_SECOND * sendMessageTiming , TASK_FOREVER, &sendMessage );
+Task taskUpdateNodeList( TASK_SECOND * updateNodeListTiming, TASK_FOREVER, &updateNodeList );
+
+//*******************************************************
+//**** Update Node List *********************************
+//*******************************************************
+
+void updateNodeList()
+{
+  if (taskUpdateNodeList.isFirstIteration())
+  {
+    Serial.println("Update Node List Task First Iteration");
+  }
+
+  // Number of nodes
+  SimpleList<uint32_t> nodes;
+
+  // Get Node List
+  nodes = mesh.getNodeList();
+
+  // Get List size
+  //  uint32_t theListSize = nodes->size();
+  int theListSize = nodes.size();
+
+  // Serial Output node list data1
+  Serial.printf("Node List Size -> %d\n", theListSize);
+
+  counter = 0;
+
+  // Try to print all nodes
+  SimpleList<uint32_t>::iterator node = nodes.begin();
+  while (node != nodes.end()) {
+    Serial.printf(" %u", *node);
+    node++;
+    nodeArray[counter] = (int) * node;
+    counter++;
+  }
+  Serial.println();
+  Serial.print("Number of Nodes: ");
+  Serial.println(counter);
+
+  Serial.println("List of Nodes: ");
+  for (int i = 0; i < counter; i++)
+  {
+    Serial.println(nodeArray[i]);
+  }
+
+  //  taskUpdateNodeList.setInterval(TASK_SECOND * updateNodeListTiming);
+}
+
+
+
+//*******************************************************
+//**** Send Message *************************************
+//*******************************************************
 
 void sendMessage()
 {
@@ -40,11 +106,18 @@ void sendMessage()
     Serial.println("Send Message Task First Iteration");
   }
 
-  String msg = "Hello from node ";
+  String msg = "Hello from Control node -> ";
   msg += mesh.getNodeId();
   mesh.sendBroadcast( msg );
-  taskSendMessage.setInterval(TASK_SECOND * 1.5);
+  taskSendMessage.setInterval(TASK_SECOND * sendMessageTiming);
+
+  // Frame rate timing (untested)
+  //Task taskSendMessage((int)(1000 / led_frame_rate), TASK_FOREVER, &sendMessage );
 }
+
+//*******************************************************
+//**** Receive Callback *********************************
+//*******************************************************
 
 // Needed for painless library
 void receivedCallback( uint32_t from, String &msg )
@@ -52,15 +125,28 @@ void receivedCallback( uint32_t from, String &msg )
   Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
 }
 
+//*******************************************************
+//**** New Connection ***********************************
+//*******************************************************
+
 void newConnectionCallback(uint32_t nodeId)
 {
   Serial.printf("--> startHere: New Connection, nodeId = %u\n", nodeId);
+
 }
+
+//*******************************************************
+//**** Changed Connection *******************************
+//*******************************************************
 
 void changedConnectionCallback()
 {
   Serial.printf("Changed connections\n");
 }
+
+//*******************************************************
+//**** Time Adjusted ************************************
+//*******************************************************
 
 void nodeTimeAdjustedCallback(int32_t offset)
 {
@@ -68,7 +154,7 @@ void nodeTimeAdjustedCallback(int32_t offset)
 }
 
 //*******************************************************
-//*******************************************************
+//**** Setup ********************************************
 //*******************************************************
 
 void setup()
@@ -79,6 +165,11 @@ void setup()
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
+  // Clear Array
+  for (int x = 0; x < sizeof(nodeArray) / sizeof(nodeArray[0]); x++)
+  {
+    nodeArray[x] = 0;
+  }
 
   //mesh.setDebugMsgTypes( ERROR | MESH_STATUS | CONNECTION | SYNC | COMMUNICATION | GENERAL | MSG_TYPES | REMOTE ); // all types on
   mesh.setDebugMsgTypes( ERROR | STARTUP );  // set before init() so that you can see startup messages
@@ -89,12 +180,16 @@ void setup()
   mesh.onChangedConnections(&changedConnectionCallback);
   mesh.onNodeTimeAdjusted(&nodeTimeAdjustedCallback);
 
+  // Define and enable User tasks
   userScheduler.addTask( taskSendMessage );
   taskSendMessage.enable();
+
+  userScheduler.addTask( taskUpdateNodeList );
+  taskUpdateNodeList.enable();
 }
 
 //*******************************************************
-//*******************************************************
+//**** Loop *********************************************
 //*******************************************************
 
 void loop()
@@ -112,9 +207,13 @@ void loop()
     String msg = String(incomingByte);
     mesh.sendBroadcast(msg);
 
-  }
+    /*
 
-  // JSON data examples
+    */
+  }
+}
+
+// JSON data examples
 //{
 //  "mode": "AAA",
 //  "count": 255,
@@ -132,7 +231,7 @@ void loop()
 //  "rgb8": [ 255, 255, 255 ]
 //}
 
-  // Parser
+// Parser
 //const size_t capacity = 9*JSON_ARRAY_SIZE(3) + JSON_OBJECT_SIZE(14) + 110;
 //DynamicJsonDocument doc(capacity);
 //
@@ -190,9 +289,9 @@ void loop()
 //JsonArray rgb8 = doc["rgb8"];
 //int rgb8_0 = rgb8[0]; // 255
 //int rgb8_1 = rgb8[1]; // 255
-//int rgb8_2 = rgb8[2]; // 255  
+//int rgb8_2 = rgb8[2]; // 255
 
-  // Serialization
+// Serialization
 //const size_t capacity = 9*JSON_ARRAY_SIZE(3) + JSON_OBJECT_SIZE(14);
 //DynamicJsonDocument doc(capacity);
 //
@@ -247,10 +346,4 @@ void loop()
 //rgb8.add(255);
 //rgb8.add(255);
 //
-//serializeJson(doc, Serial);  
-
-
-
-
-  
-}
+//serializeJson(doc, Serial);
