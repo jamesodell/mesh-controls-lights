@@ -17,8 +17,8 @@
 #define FASTLED_INTERRUPT_RETRY_COUNT 1
 #include "painlessMesh.h"
 
-#define   MESH_PREFIX     "LightMesh"
-#define   MESH_PASSWORD   "password1"
+#define   MESH_PREFIX     "whateverYouLike"
+#define   MESH_PASSWORD   "somethingSneaky"
 #define   MESH_PORT       5555
 
 Scheduler userScheduler; // to control your personal task

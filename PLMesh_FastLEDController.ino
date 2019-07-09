@@ -23,8 +23,8 @@
 #include <FastLED.h>
 
 // PainLessMesh defines
-#define   MESH_PREFIX     "LightMesh1"
-#define   MESH_PASSWORD   "password"
+#define   MESH_PREFIX     "whateverYouLike"
+#define   MESH_PASSWORD   "somethingSneaky"
 #define   MESH_PORT       5555
 
 // FastLED defines
@@ -37,7 +37,7 @@ painlessMesh  mesh;
 // LED data array
 CRGB leds[NUM_LEDS];
 
-unsigned int led_state = 0;
+char led_state = '0';
 unsigned int led_counter = 0;
 unsigned int led_frame_rate = 30;
 
@@ -76,127 +76,159 @@ void sendMessage()
 
 void LEDController()
 {
-  // Start all leds RED
-  for (int i = 0; i < NUM_LEDS; i++)
-  {
-    leds[i] = CRGB::Red;
-  }
-  FastLED.show();
 
   // Change LED pattern based on received message
   switch (led_state)
   {
-    case 1:   //
+    case '1':   // RED
       {
-
+        // Start all leds WHITE
+        for (int i = 0; i < NUM_LEDS; i++)
+        {
+          leds[i] = CRGB::Red;
+        }
+        FastLED.show();
 
         break;
       }
-    default:
+    case '2':   // GREEN
       {
+        // Start all leds WHITE
+        for (int i = 0; i < NUM_LEDS; i++)
+        {
+          leds[i] = CRGB::Green;
+        }
+        FastLED.show();
 
         break;
       }
+    case '3':   // BLUE
+      {
+        // Start all leds WHITE
+        for (int i = 0; i < NUM_LEDS; i++)
+        {
+          leds[i] = CRGB::Blue;
+        }
+        FastLED.show();
 
-
-
-
-
+        break;
+      }
+//    default:
+//      {
+//        // Start all leds WHITE
+//        for (int i = 0; i < NUM_LEDS; i++)
+//        {
+//          leds[i] = CRGB::White;
+//        }
+//        FastLED.show();
+//
+//        break;
+//      }
 
 
       // Set Task interval
       // TODO Will this work if led_frame_rate changed dynamically?
       taskLEDController.setInterval((int)(1000 / led_frame_rate));
 
-      //
-      //  // Change LED pattern based on received message
-      //  switch (led_state)
-      //  {
-      //    case 1:
-      //      {
-      //        // RGBLoop - no parameters
-      //        RGBLoop();
-      //        break;
-      //      }
-      //
-      //    case 2:
-      //      {
-      //        // HalloweenEyes - Color (red, green, blue), Size of eye, space between eyes, fade (true/false), steps, fade delay, end pause
-      //        HalloweenEyes(0xff, 0x00, 0x00,
-      //                      1, 4,
-      //                      true, random(5, 50), random(50, 150),
-      //                      random(1000, 10000));
-      //        HalloweenEyes(0xff, 0x00, 0x00,
-      //                      1, 4,
-      //                      true, random(5, 50), random(50, 150),
-      //                      random(1000, 10000));
-      //        break;
-      //      }
-      //
-      //    case 3:
-      //      {
-      //        // CylonBounce - Color (red, green, blue), eye size, speed delay, end pause
-      //        CylonBounce(0xff, 0x00, 0x00, 4, 10, 50);
-      //        break;
-      //      }
-      //
-      //    case 4:
-      //      {
-      //        // NewKITT - Color (red, green, blue), eye size, speed delay, end pause
-      //        NewKITT(0xff, 0x00, 0x00, 8, 10, 50);
-      //        break;
-      //      }
-      //
-      //    case 5:
-      //      {
-      //        // Twinkle - Color (red, green, blue), count, speed delay, only one twinkle (true/false)
-      //        Twinkle(0xff, 0x00, 0x00, 10, 100, false);
-      //        break;
-      //      }
-      //
-      //    case 6:
-      //      {
-      //        // SnowSparkle - Color (red, green, blue), sparkle delay, speed delay
-      //        SnowSparkle(0x10, 0x10, 0x10, 20, random(100, 1000));
-      //        break;
-      //      }
-      //
-      //    case 7:
-      //      {
-      //        // colorWipe - Color (red, green, blue), speed delay
-      //        colorWipe(0x00, 0xff, 0x00, 50);
-      //        colorWipe(0x00, 0x00, 0x00, 50);
-      //        break;
-      //      }
-      //
-      //    case 8:
-      //      {
-      //        // rainbowCycle - speed delay
-      //        rainbowCycle(20);
-      //        break;
-      //      }
-      //
-      //    case 9:
-      //      {
-      //        // Fire - Cooling rate, Sparking rate, speed delay
-      //        Fire(55, 120, 15);
-      //        break;
-      //      }
-      //
-      //    default:
-      //      {
-      //        FastLED.clear(true);
-      //        for (int i = 0; i < NUM_LEDS; i++)
-      //        {
-      //          leds[i] = CRGB::Red;
-      //          i++;
-      //        }
-      //        FastLED.show();
-      //        break;
-      //      }
   }
 
 }
+
+
+
+
+
+
+//
+//  // Change LED pattern based on received message
+//  switch (led_state)
+//  {
+//    case 1:
+//      {
+//        // RGBLoop - no parameters
+//        RGBLoop();
+//        break;
+//      }
+//
+//    case 2:
+//      {
+//        // HalloweenEyes - Color (red, green, blue), Size of eye, space between eyes, fade (true/false), steps, fade delay, end pause
+//        HalloweenEyes(0xff, 0x00, 0x00,
+//                      1, 4,
+//                      true, random(5, 50), random(50, 150),
+//                      random(1000, 10000));
+//        HalloweenEyes(0xff, 0x00, 0x00,
+//                      1, 4,
+//                      true, random(5, 50), random(50, 150),
+//                      random(1000, 10000));
+//        break;
+//      }
+//
+//    case 3:
+//      {
+//        // CylonBounce - Color (red, green, blue), eye size, speed delay, end pause
+//        CylonBounce(0xff, 0x00, 0x00, 4, 10, 50);
+//        break;
+//      }
+//
+//    case 4:
+//      {
+//        // NewKITT - Color (red, green, blue), eye size, speed delay, end pause
+//        NewKITT(0xff, 0x00, 0x00, 8, 10, 50);
+//        break;
+//      }
+//
+//    case 5:
+//      {
+//        // Twinkle - Color (red, green, blue), count, speed delay, only one twinkle (true/false)
+//        Twinkle(0xff, 0x00, 0x00, 10, 100, false);
+//        break;
+//      }
+//
+//    case 6:
+//      {
+//        // SnowSparkle - Color (red, green, blue), sparkle delay, speed delay
+//        SnowSparkle(0x10, 0x10, 0x10, 20, random(100, 1000));
+//        break;
+//      }
+//
+//    case 7:
+//      {
+//        // colorWipe - Color (red, green, blue), speed delay
+//        colorWipe(0x00, 0xff, 0x00, 50);
+//        colorWipe(0x00, 0x00, 0x00, 50);
+//        break;
+//      }
+//
+//    case 8:
+//      {
+//        // rainbowCycle - speed delay
+//        rainbowCycle(20);
+//        break;
+//      }
+//
+//    case 9:
+//      {
+//        // Fire - Cooling rate, Sparking rate, speed delay
+//        Fire(55, 120, 15);
+//        break;
+//      }
+//
+//    default:
+//      {
+//        FastLED.clear(true);
+//        for (int i = 0; i < NUM_LEDS; i++)
+//        {
+//          leds[i] = CRGB::Red;
+//          i++;
+//        }
+//        FastLED.show();
+//        break;
+//      }
+
+
+
+
 
 
 // Painless Mesh Callbacks
@@ -209,8 +241,8 @@ void receivedCallback( uint32_t from, String & msg )
 {
   Serial.printf("startHere: Received from %u msg=%s\n", from, msg.c_str());
 
-// TODO May want to stay with string instead of int
-//  led_state = atoi(msg.c_str());
+  // TODO May want to stay with string instead of int
+    led_state = atoi(msg.c_str());
   // TEST
   Serial.print("led_state -> ");
   Serial.println(led_state);
@@ -262,6 +294,14 @@ void setup()
 
 
 }
+
+
+
+
+
+
+
+
 
 //*******************************************************
 //**************** Loop *********************************
